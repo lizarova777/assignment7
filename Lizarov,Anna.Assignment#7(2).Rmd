@@ -1,0 +1,277 @@
+---
+title: "Lizarov, Anna. Assignment#7(2). Rmd"
+author: "Anna Lizarov"
+date: "November 29, 2018"
+output: html_document
+---
+
+## Part I
+
+#Upload data
+```{r}
+D1 <- read.csv("online.data.csv", header=TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+D2 <- D1[,-1]
+D3 <- D2 %>% mutate(level.up=ifelse(level.up=="yes",1,0)) 
+D4 <- D3 %>% gather("Variables","Value", 1:6)
+```
+
+#Visualization 
+```{r}
+#Start by creating histograms of the distributions for all variables (#HINT: look up "facet" in the ggplot documentation)
+
+library(ggplot2)
+ggplot(D4, aes(Value))+
+  geom_histogram()+
+  facet_wrap(~Variables, scale="free")
+```
+
+```{r}
+#Then visualize the relationships between variables
+library(corrplot)
+D5 <- D1[,2:6]
+COR <- cor(D5)
+
+corrplot(COR, order="AOE", method="circle", tl.pos="lt", type="upper",        
+tl.col="black", tl.cex=0.6, tl.srt=45, 
+        addCoef.col="black", addCoefasPercent = TRUE,
+        sig.level=0.50, insig = "blank")
+
+#Try to capture an intution about the data and the relationships
+```
+
+```{r}
+#Scatterplot 
+pairs(D5)
+```
+
+
+```{r}
+#Answer: There is strong positive relationship between post test score and the number of messages sent by each student to other students about the assignments. However, there is a weak positive relationship between post test score and the number of forum posts students posted asking questions about the assignment. This indicates that messaging is more effective in improving grades for geography than forum posts. It is important to note that, based on the histogram, students are more actively engaged in messaging than posting questions on a forum regarding the assignment. Nonetheless, the average assignment score is moderately to highly related to post test score and messages. 
+```
+
+#Classification tree
+```{r}
+#Create a classification tree that predicts whether a student "levels up" in the online course using three variables of your choice (As we did last time, set all controls to their minimums)
+library(rpart)
+rp<- rpart(level.up~forum.posts+post.test.score+messages, method="class", data=D3)
+printcp(rp)
+#Plot and generate a CP table for your tree 
+post(rp, file = "tree1.ps", title = "Online Geography Tutoring System") #This creates a pdf image of the tree
+
+```
+
+```{r}
+#Generate a probability value that represents the probability that a student levels up based your classification tree 
+
+D3$pred <- predict(rp, type = "prob")[,2]#Last class we used type = "class" which predicted the classification for us, this time we are using type = "prob" to see the probability that our classififcation is based on.
+```
+
+## Part II
+#Now you can generate the ROC curve for your model. You will need to install the package ROCR to do this.
+```{r}
+library(ROCR)
+
+#Plot the curve
+pred.detail <- prediction(D3$pred, D3$level.up) 
+plot(performance(pred.detail, "tpr", "fpr"))
+abline(0, 1, lty = 2)
+```
+
+```{r}
+#Calculate the Area Under the Curve
+unlist(slot(performance(pred.detail,"auc"), "y.values"))#Unlist liberates the AUC value from the "performance" object created by ROCR     # AUC  = 0.855
+```
+
+```{r}
+#Now repeat this process, but using the variables you did not use for the previous model and compare the plots & results of your two models. Which one do you think was the better model? Why?
+rp2<- rpart(level.up~av.assignment.score+pre.test.score, method="class", data=D3)
+printcp(rp2)
+#Plot and generate a CP table for your tree 
+post(rp2, file = "tree2.ps", title = "Online Geography Tutoring System 2") #This creates a pdf image of the tree
+```
+
+```{r}
+D3$pred2 <- predict(rp2, type = "prob")[,2]
+
+#Plot the curve
+pred2.detail <- prediction(D3$pred2, D3$level.up) 
+plot(performance(pred2.detail, "tpr", "fpr"))
+abline(0, 1, lty = 2)
+```
+
+```{r}
+#Calculate the Area Under the Curve
+unlist(slot(performance(pred2.detail,"auc"),"y.values"))    #AUC = 0.977
+```
+
+
+```{r}
+#Answer: Model 2 is better since its area under the ROC (AUC) is greater than that of model 1. In particular, AUC for model 2 is 0.977 whereas the AUC for model 1 is 0.855. This suggests that model 2 is better at predicting that the system will allow the student to go to the next level. 
+```
+
+## Part III
+#Thresholds
+```{r}
+#Look at the ROC plot for your first model. Based on this plot choose a probability threshold that balances capturing the most correct predictions against false positives. Then generate a new variable in your data set that classifies each student according to your chosen threshold.
+
+#Model 1:
+
+threshold.pred1 <- 0.70
+D3$threshold.pred1 <- ifelse(D3$pred <= threshold.pred1, 0,1) 
+
+D3.a <- count(D3, level.up, threshold.pred1)
+D3.a$outcome <- ifelse(D3.a$level.up== 1 & D3.a$threshold.pred1== 1, "TP", ifelse(D3.a$level.up== 1 & D3.a$threshold.pred1== 0, "FN", ifelse(D3.a$level.up== 0 & D3.a$threshold.pred1== 1, "FP", "TN")))
+D3.a
+```
+
+```{r}
+#Now generate three diagnostics:
+
+D3$accuracy.model1 <- ((D3.a[D3.a$outcome=="TP",]$n + D3.a[D3.a$outcome=="TN",]$n) / sum(D3.a$n))  
+ # = 0.841
+
+D3$precision.model1 <- D3.a[D3.a$outcome=="TP",]$n/(D3.a[D3.a$outcome=="TP",]$n+D3.a[D3.a$outcome=="FP",]$n)     # = 0.742
+
+D3$recall.model1 <- D3.a[D3.a$outcome=="TP",]$n/(D3.a[D3.a$outcome=="TP",]$n+D3.a[D3.a$outcome=="FN",]$n)        # = 0.923
+
+```
+
+
+```{r}
+#First generate the table of comparisons
+table1 <- table(D1$level.up, D3$threshold.pred1)
+colnames(table1) <- c("no", "yes")
+table1
+```
+```{r}
+#Convert to matrix
+matrix1 <- as.matrix(table1)
+
+#Calculate kappa
+po <-  ((D3.a[D3.a$outcome=="TP",]$n + D3.a[D3.a$outcome=="TN",]$n) / sum(D3.a$n))
+pe <- (((D3.a[D3.a$outcome=="TN",]$n+D3.a[D3.a$outcome=="FN",]$n)/sum(D3.a$n))*((D3.a[D3.a$outcome=="TN",]$n+D3.a[D3.a$outcome=="FP",]$n)/sum(D3.a$n))) + (((D3.a[D3.a$outcome=="TP",]$n+D3.a[D3.a$outcome=="FP",]$n)/sum(D3.a$n))* ((D3.a[D3.a$outcome=="TP",]$n+D3.a[D3.a$outcome=="FN",]$n)/sum(D3.a$n)))
+(kappa <- (po-pe)/(1-pe))  # = 0.6816
+```
+```{r}
+#Now choose a different threshold value and repeat these diagnostics. What conclusions can you draw about your two thresholds?
+threshold.pred2 <- 0.10
+D3$threshold.pred2 <- ifelse(D3$pred <= threshold.pred2, 0,1) 
+
+D3.b <- count(D3, level.up, threshold.pred2)
+D3.b$outcome <- ifelse(D3.b$level.up== 1 & D3.b$threshold.pred2== 1, "TP", ifelse(D3.b$level.up== 1 & D3.b$threshold.pred2== 0, "FN", ifelse(D3.b$level.up== 0 & D3.b$threshold.pred2== 1, "FP", "TN")))
+D3.b
+```
+```{r}
+#Now generate three diagnostics:
+
+D3$accuracy.model1 <- ((D3.b[D3.b$outcome=="TP",]$n + D3.b[D3.b$outcome=="TN",]$n) / sum(D3.b$n))  
+ # = 0.841
+
+D3$precision.model1 <- D3.b[D3.b$outcome=="TP",]$n/(D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.b$outcome=="FP",]$n)     # = 0.742
+
+D3$recall.model1 <- D3.b[D3.b$outcome=="TP",]$n/(D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.a$outcome=="FN",]$n)        # = 0.923
+```
+
+```{r}
+table2 <- table(D1$level.up, D3$threshold.pred2)
+colnames(table2) <- c("no", "yes")
+table2
+```
+
+```{r}
+#Convert to matrix
+matrix2 <- as.matrix(table2)
+
+#Calculate kappa
+po <-  ((D3.b[D3.b$outcome=="TP",]$n + D3.b[D3.b$outcome=="TN",]$n) / sum(D3.b$n))
+pe <- (((D3.a[D3.b$outcome=="TN",]$n+D3.b[D3.b$outcome=="FN",]$n)/sum(D3.b$n))*((D3.b[D3.b$outcome=="TN",]$n+D3.b[D3.b$outcome=="FP",]$n)/sum(D3.b$n))) + (((D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.b$outcome=="FP",]$n)/sum(D3.b$n))* ((D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.b$outcome=="FN",]$n)/sum(D3.b$n)))
+(kappa <- (po-pe)/(1-pe))  # = 0.6816
+```
+
+```{r}
+#Model 2:
+
+threshold.pred3 <- 0.15
+D3$threshold.pred3 <- ifelse(D3$pred2 <= threshold.pred3, 0, 1) 
+
+D3.c <- count(D3, level.up, threshold.pred3)
+D3.c$outcome <- ifelse(D3.c$level.up== 1 & D3.c$threshold.pred3== 1, "TP", ifelse(D3.c$level.up== 1 & D3.c$threshold.pred3== 0, "FN", ifelse(D3.c$level.up== 0 & D3.c$threshold.pred3== 1, "FP", "TN")))
+D3.c
+```
+
+```{r}
+#Now generate three diagnostics:
+
+D3$accuracy.model2 <- ((D3.c[D3.c$outcome=="TP",]$n + D3.c[D3.c$outcome=="TN",]$n) / sum(D3.c$n))  
+ # = 0.972
+
+D3$precision.model2 <- D3.c[D3.c$outcome=="TP",]$n/(D3.c[D3.c$outcome=="TP",]$n+D3.c[D3.c$outcome=="FP",]$n)      # = 0.935
+
+D3$recall.model2 <- D3.c[D3.c$outcome=="TP",]$n/(D3.c[D3.c$outcome=="TP",]$n +0)        
+ # = 1
+```
+
+```{r}
+table3 <- table(D1$level.up, D3$threshold.pred3)
+colnames(table3) <- c("no", "yes")
+table3
+```
+
+```{r}
+#Convert to matrix
+matrix3 <- as.matrix(table3)
+
+#Calculate kappa
+po <-  ((D3.c[D3.c$outcome=="TP",]$n + D3.c[D3.c$outcome=="TN",]$n) / sum(D3.c$n))
+pe <- (((D3.c[D3.c$outcome=="TN",]$n+0)/sum(D3.c$n))*((D3.c[D3.c$outcome=="TN",]$n+D3.c[D3.c$outcome=="FP",]$n)/sum(D3.c$n))) + (((D3.c[D3.c$outcome=="TP",]$n+D3.c[D3.c$outcome=="FP",]$n)/sum(D3.c$n))* ((D3.c[D3.c$outcome=="TP",]$n+0)/sum(D3.c$n)))
+(kappa <- (po-pe)/(1-pe)) # = 0.942
+```
+
+```{r}
+# Another Threshold:
+
+threshold.pred3 <- 0.92
+D3$threshold.pred3 <- ifelse(D3$pred2 <= threshold.pred3, 0, 1) 
+
+D3.d <- count(D3, level.up, threshold.pred3)
+D3.d$outcome <- ifelse(D3.d$level.up== 1 & D3.d$threshold.pred3== 1, "TP", ifelse(D3.d$level.up== 1 & D3.d$threshold.pred3== 0, "FN", ifelse(D3.d$level.up== 0 & D3.d$threshold.pred3== 1, "FP", "TN")))
+D3.d
+```
+
+```{r}
+#Now generate three diagnostics:
+
+D3$accuracy.model2 <- ((D3.d[D3.d$outcome=="TP",]$n + D3.d[D3.d$outcome=="TN",]$n) / sum(D3.d$n))  
+ # = 0.972
+
+D3$precision.model2 <- D3.d[D3.d$outcome=="TP",]$n/(D3.d[D3.d$outcome=="TP",]$n+D3.d[D3.d$outcome=="FP",]$n)      # = 0.935
+
+D3$recall.model2 <- D3.d[D3.d$outcome=="TP",]$n/(D3.d[D3.d$outcome=="TP",]$n +0)        
+ # = 1
+```
+
+```{r}
+table4 <- table(D1$level.up, D3$threshold.pred3)
+colnames(table4) <- c("no", "yes")
+table4
+```
+
+```{r}
+#Convert to matrix
+matrix4 <- as.matrix(table4)
+
+#Calculate kappa
+po <-  ((D3.d[D3.d$outcome=="TP",]$n + D3.d[D3.d$outcome=="TN",]$n) / sum(D3.d$n))
+pe <- (((D3.d[D3.d$outcome=="TN",]$n+0)/sum(D3.d$n))*((D3.d[D3.d$outcome=="TN",]$n+D3.d[D3.d$outcome=="FP",]$n)/sum(D3.d$n))) + (((D3.d[D3.d$outcome=="TP",]$n+D3.d[D3.d$outcome=="FP",]$n)/sum(D3.d$n))* ((D3.d[D3.d$outcome=="TP",]$n+0)/sum(D3.d$n)))
+(kappa <- (po-pe)/(1-pe)) # = 0.942
+```
+
+```{r}
+# Answer: For both models, different threshold values produced the same results. However, Model 2 is better than Model 1 when it comes to the diagnostic metrics. This indicates that not only model 2 is better at predicting that the system will allow the student to go to the next level, it produces more accurate predictions. 
+```
+
