@@ -1,9 +1,11 @@
 ---
-title: "Lizarov, Anna. Assignment#7(2). Rmd"
+title: "Diagnostics Metrics"
 author: "Anna Lizarov"
 date: "November 29, 2018"
 output: html_document
 ---
+
+In the following project, you will be looking at data from an one level of an online geography tutoring system used by 5th grade students. The game involves a pre-test of geography knowledge (pre.test), a series of assignments for which you have the average score (av.assignment.score),  the number of messages sent by each student to other students about the assignments (messages), the number of forum posts students posted asking questions about the assignment (forum.posts), a post test at the end of the level (post.test) and whether or not the system allowed the students to go on to the next level (level.up).  
 
 ## Part I
 
@@ -111,7 +113,7 @@ unlist(slot(performance(pred2.detail,"auc"),"y.values"))    #AUC = 0.977
 
 
 ```{r}
-#Answer: Model 2 is better since its area under the ROC (AUC) is greater than that of model 1. In particular, AUC for model 2 is 0.977 whereas the AUC for model 1 is 0.855. This suggests that model 2 is better at predicting that the system will allow the student to go to the next level. 
+#Answer: Model 2 is better since its area under the ROC (AUC) is greater than that of model 1. In particular, AUC for model 2 is 0.977 whereas the AUC for model 1 is 0.855. This suggests that model 2 is better at predicting that the system will allow the student to go to the next level since it has a higher true positive rate (sensitivity). 
 ```
 
 ## Part III
@@ -272,6 +274,5 @@ pe <- (((D3.d[D3.d$outcome=="TN",]$n+0)/sum(D3.d$n))*((D3.d[D3.d$outcome=="TN",]
 ```
 
 ```{r}
-# Answer: For both models, different threshold values produced the same results. However, Model 2 is better than Model 1 when it comes to the diagnostic metrics. This indicates that not only model 2 is better at predicting that the system will allow the student to go to the next level, it produces more accurate predictions. 
-```
+# Answer: For both models, different threshold values produced the same results. However, Model 2 is better than Model 1 when it comes to the diagnostic metrics. This indicates that not only model 2 is better at predicting that the system will allow the student to go to the next level, it produces more accurate predictionsand relevant predictions. Likewise, there is a higher reliability betweeen the data and the model.This is indicated by higher accuracy, precision, recall, and kappa values. 
 
