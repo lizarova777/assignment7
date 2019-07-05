@@ -2,7 +2,7 @@
 
 ## Project Objective:
 
-In the following project, the data from an one level of an online geography tutoring system used by 5th grade students will be inspected. The game involves a pre-test of geography knowledge (pre.test), a series of assignments for which you have the average score (av.assignment.score), the number of messages sent by each student to other students about the assignments (messages), the number of forum posts students posted asking questions about the assignment (forum.posts), a post test at the end of the level (post.test) and whether or not the system allowed the students to go on to the next level (level.up). The purpose of this project is to build some classification trees and then generate a diagnostic metrics about these trees.
+In the following project, the data from an one level of an online geography tutoring system used by 5th grade students will be inspected. The game involves a pre-test of geography knowledge (pre.test), a series of assignments for which you have the average score (av.assignment.score), the number of messages sent by each student to other students about the assignments (messages), the number of forum posts students posted asking questions about the assignment (forum.posts), a post test at the end of the level (post.test) and whether or not the system allowed the students to go on to the next level (level.up). The purpose of this project is to build some classification trees and then generate diagnostic metrics about these trees.
 
 
 ## Dataset:
