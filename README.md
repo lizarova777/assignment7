@@ -30,7 +30,7 @@ Then, AUC of the first model was compared with the AUC of the second model. The 
 
 ### First Classification Tree:
 
-![tree1](https://github.com/lizarova777/assignmen7t/blob/master/tree1.png)
+![tree1](https://github.com/lizarova777/assignment7/blob/master/tree1.png)
 
 ### Second Classificaition Tree:
 
