@@ -119,6 +119,7 @@ unlist(slot(performance(pred2.detail,"auc"),"y.values"))    #AUC = 0.977
 ## Part III
 #Thresholds
 ```{r}
+library(psych)
 #Look at the ROC plot for your first model. Based on this plot choose a probability threshold that balances capturing the most correct predictions against false positives. Then generate a new variable in your data set that classifies each student according to your chosen threshold.
 
 #Model 1:
@@ -150,6 +151,7 @@ table1 <- table(D1$level.up, D3$threshold.pred1)
 colnames(table1) <- c("no", "yes")
 table1
 ```
+
 ```{r}
 #Convert to matrix
 matrix1 <- as.matrix(table1)
@@ -158,7 +160,10 @@ matrix1 <- as.matrix(table1)
 po <-  ((D3.a[D3.a$outcome=="TP",]$n + D3.a[D3.a$outcome=="TN",]$n) / sum(D3.a$n))
 pe <- (((D3.a[D3.a$outcome=="TN",]$n+D3.a[D3.a$outcome=="FN",]$n)/sum(D3.a$n))*((D3.a[D3.a$outcome=="TN",]$n+D3.a[D3.a$outcome=="FP",]$n)/sum(D3.a$n))) + (((D3.a[D3.a$outcome=="TP",]$n+D3.a[D3.a$outcome=="FP",]$n)/sum(D3.a$n))* ((D3.a[D3.a$outcome=="TP",]$n+D3.a[D3.a$outcome=="FN",]$n)/sum(D3.a$n)))
 (kappa <- (po-pe)/(1-pe))  # = 0.6816
+#or
+cohen.kappa(matrix1) # = 0.68
 ```
+
 ```{r}
 #Now choose a different threshold value and repeat these diagnostics. What conclusions can you draw about your two thresholds?
 threshold.pred2 <- 0.10
@@ -177,6 +182,7 @@ D3$accuracy.model1 <- ((D3.b[D3.b$outcome=="TP",]$n + D3.b[D3.b$outcome=="TN",]$
 D3$precision.model1 <- D3.b[D3.b$outcome=="TP",]$n/(D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.b$outcome=="FP",]$n)     # = 0.742
 
 D3$recall.model1 <- D3.b[D3.b$outcome=="TP",]$n/(D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.a$outcome=="FN",]$n)        # = 0.923
+
 ```
 
 ```{r}
@@ -193,6 +199,8 @@ matrix2 <- as.matrix(table2)
 po <-  ((D3.b[D3.b$outcome=="TP",]$n + D3.b[D3.b$outcome=="TN",]$n) / sum(D3.b$n))
 pe <- (((D3.a[D3.b$outcome=="TN",]$n+D3.b[D3.b$outcome=="FN",]$n)/sum(D3.b$n))*((D3.b[D3.b$outcome=="TN",]$n+D3.b[D3.b$outcome=="FP",]$n)/sum(D3.b$n))) + (((D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.b$outcome=="FP",]$n)/sum(D3.b$n))* ((D3.b[D3.b$outcome=="TP",]$n+D3.b[D3.b$outcome=="FN",]$n)/sum(D3.b$n)))
 (kappa <- (po-pe)/(1-pe))  # = 0.6816
+#or 
+cohen.kappa(matrix2) # = 0/error 
 ```
 
 ```{r}
@@ -232,6 +240,8 @@ matrix3 <- as.matrix(table3)
 po <-  ((D3.c[D3.c$outcome=="TP",]$n + D3.c[D3.c$outcome=="TN",]$n) / sum(D3.c$n))
 pe <- (((D3.c[D3.c$outcome=="TN",]$n+0)/sum(D3.c$n))*((D3.c[D3.c$outcome=="TN",]$n+D3.c[D3.c$outcome=="FP",]$n)/sum(D3.c$n))) + (((D3.c[D3.c$outcome=="TP",]$n+D3.c[D3.c$outcome=="FP",]$n)/sum(D3.c$n))* ((D3.c[D3.c$outcome=="TP",]$n+0)/sum(D3.c$n)))
 (kappa <- (po-pe)/(1-pe)) # = 0.942
+#or
+cohen.kappa(matrix3) # = 0.94
 ```
 
 ```{r}
@@ -271,8 +281,10 @@ matrix4 <- as.matrix(table4)
 po <-  ((D3.d[D3.d$outcome=="TP",]$n + D3.d[D3.d$outcome=="TN",]$n) / sum(D3.d$n))
 pe <- (((D3.d[D3.d$outcome=="TN",]$n+0)/sum(D3.d$n))*((D3.d[D3.d$outcome=="TN",]$n+D3.d[D3.d$outcome=="FP",]$n)/sum(D3.d$n))) + (((D3.d[D3.d$outcome=="TP",]$n+D3.d[D3.d$outcome=="FP",]$n)/sum(D3.d$n))* ((D3.d[D3.d$outcome=="TP",]$n+0)/sum(D3.d$n)))
 (kappa <- (po-pe)/(1-pe)) # = 0.942
+#or
+cohen.kappa(matrix4) # = 0.94
 ```
 
 ```{r}
 # Answer: For both models, different threshold values produced the same results. However, Model 2 is better than Model 1 when it comes to the diagnostic metrics. This indicates that not only model 2 is better at predicting that the system will allow the student to go to the next level, it produces more accurate predictionsand relevant predictions. Likewise, there is a higher reliability betweeen the data and the model.This is indicated by higher accuracy, precision, recall, and kappa values. 
-
+```
